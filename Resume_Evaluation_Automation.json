@@ -1,0 +1,1363 @@
+{
+  "name": "Resume_Evaluation_Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "https://drive.google.com/drive/u/1/folders/1To9__DkZl187zHbV_gp5fF9DVil4JAv9",
+          "mode": "url"
+        },
+        "event": "fileCreated",
+        "options": {
+          "fileType": "all"
+        }
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        0
+      ],
+      "id": "17e5e823-3bf9-4737-9f3e-00ec5a141ac1",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xze0uD7VhKf5aDs0",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        352,
+        -16
+      ],
+      "id": "5396f4a2-8aca-4f48-a030-b9a7f78878a5",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xze0uD7VhKf5aDs0",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        992,
+        -16
+      ],
+      "id": "9b4f62a7-62e7-4f7e-a43d-5bab033766fd",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nconst text = $input.first().json.text || '';\nconst normalized = text\n  .toLowerCase()\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nconst hash = crypto\n  .createHash('sha256')\n  .update(normalized)\n  .digest('hex');\n\nreturn [\n  {\n    json: {\n      resume_hash: hash,\n      resume_text: text\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        -16
+      ],
+      "id": "5ec64d23-5466-4a78-bfd4-a6e97baf9978",
+      "name": "Convert to hash"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": "=1"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1936,
+        32
+      ],
+      "id": "cd65ea85-f89b-472e-b859-a384ca9cb39e",
+      "name": "Merge",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3b0cdd90-369a-4169-aea6-d8fa3aacec17",
+              "leftValue": "={{ $json.mimeType }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "b4cfa8ff-4191-4add-9708-e7a83881cc7e",
+      "name": "Is pdf?"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/19qQsGGRZS4BtTpiz2dPKREtdOsj82g3jyFVz-KTTLkg/edit?pli=1&gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19qQsGGRZS4BtTpiz2dPKREtdOsj82g3jyFVz-KTTLkg/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1824,
+        -144
+      ],
+      "id": "08b4eb66-e5fc-4def-afc8-2130068e96ec",
+      "name": "Get_Hashes",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ln4PP3EOm2LKTq74",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d8a3d9ad-80ec-4f64-b4e9-7f8fb8bb93cc",
+              "leftValue": "={{ $json.existing_hashes }}",
+              "rightValue": "={{ $('Convert to hash').item.json.resume_hash }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        144,
+        272
+      ],
+      "id": "cd6c35f8-8f52-4e7d-916e-c02ee758a086",
+      "name": "Existing hash?"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/17j9tuXUNrIlMzIfLNfmHSG6Wm48l5Wv9ECw2whoGxYs/edit?pli=1&gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17j9tuXUNrIlMzIfLNfmHSG6Wm48l5Wv9ECw2whoGxYs/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2880,
+        272
+      ],
+      "id": "ce4895b0-f284-4ede-a9b6-948fee199e4f",
+      "name": "Get Email",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ln4PP3EOm2LKTq74",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2992,
+        1088
+      ],
+      "id": "f710ba1b-bcb9-4859-8c9f-749a8352eae2",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw;\n\nif ($input.first().json.output[0].content[0].text) {\n  raw = $input.first().json.output[0].content[0].text;\n} else {\n  throw new Error(\"No AI output text found to parse\");\n}\n\nraw = raw.trim();\n\nraw = raw.replace(/^```json/i, '').replace(/^```/i, '').replace(/```$/, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  throw new Error(\"Failed to parse AI JSON: \" + \"\\nRaw output:\\n\" + raw);\n}\n\nreturn [\n  {\n    json: parsed\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        288
+      ],
+      "id": "fa734e87-fdca-43d2-93f8-c7a73f824a4b",
+      "name": "Parse resume text"
+    },
+    {
+      "parameters": {
+        "jsCode": "const files = $input.all().map(item => item.json);\n\nif (!files.length) {\n  throw new Error(\"No Job Description files found\");\n}\n\n// Sort by modifiedTime (latest first)\nfiles.sort((a, b) => {\n  return new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime();\n});\n\n// Pick the latest JD\nreturn [\n  {\n    json: files[0]\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        528
+      ],
+      "id": "3ccba4fb-9eaf-45c6-98be-43e3e74b8fa3",
+      "name": "Find latest JD"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2304,
+        528
+      ],
+      "id": "e44b1fc4-66d7-4e1c-b4c4-e83d21a77c6e",
+      "name": "Downlaod JD",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xze0uD7VhKf5aDs0",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        2928,
+        528
+      ],
+      "id": "6396e848-6af0-49f3-9bd1-f39ce9b8c1c8",
+      "name": "Extract JD"
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw;\n\n// 1️⃣ Read AI output safely\nif (typeof $input.first().json.output[0].content[0].text === \"string\") {\n  raw = $input.first().json.output[0].content[0].text;\n}  else {\n  throw new Error(\"No resume analysis AI output found\");\n}\n\n// 2️⃣ Clean formatting\nraw = raw.trim();\n\n// Remove ```json / ``` wrappers if AI added them\nraw = raw.replace(/^```json/i, \"\");\nraw = raw.replace(/^```/i, \"\");\nraw = raw.replace(/```$/, \"\");\nraw = raw.trim();\n\n// 3️⃣ Parse JSON\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  throw new Error(\n    \"Failed to parse resume analysis JSON.\\n\" +\n    \"Raw output:\\n\" +\n    raw\n  );\n}\n\n// 4️⃣ Validate expected fields (soft validation)\nparsed.relevance_score = parsed.relevance_score ?? 0;\nparsed.reasoning = parsed.reasoning ?? \"Not Found\";\nparsed.missing_or_improvements = parsed.missing_or_improvements ?? \"Not Found\";\n\n// 5️⃣ Return structured output\nreturn [\n  {\n    json: {\n      relevance_score: parsed.relevance_score,\n      reasoning: parsed.reasoning,\n      missing_or_improvements: parsed.missing_or_improvements\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        944
+      ],
+      "id": "6d579370-d547-42eb-b0a4-f1c45b0bf316",
+      "name": "Parse evaluated result"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are an objective resume evaluation system.\n\nCompare the following RESUME JSON against the JOB DESCRIPTION JSON and calculate a relevance score.\n\nSCORING RULES (Total = 100 points):\n- Required skills match: 35 points\n- Relevant experience & responsibilities: 30 points\n- Preferred / nice-to-have skills: 20 points\n- Education / background relevance: 10 points\n- Overall clarity & alignment with role: 5 points\n\nEVALUATION CALIBRATION:\n- This is an entry-level / early-career role evaluation\n- Be fair and moderately lenient in scoring\n- Partial skill matches should receive proportional credit\n- Missing preferred or nice-to-have skills should not heavily penalize the score\n- If most core required skills are present, the score should generally fall between 65 and 85\n- Scores below 60 should be reserved only for clear mismatches\n\nIMPORTANT RULES:\n- Use ONLY the information provided in the JSON inputs\n- Do NOT infer or assume missing information\n- If something is not present, treat it as missing\n- Be consistent in scoring\n- Scores should be realistic (not everyone gets 90+)\n\nRESUME JSON:\n{{ $('SET Parsed_resume').item.json.Resume_parsed }}\n\nJOB DESCRIPTION JSON:\n{{ $json.parsed_JD_text }}\n\nTASKS:\n1. Calculate a relevance score from 0 to 100 based on the weightage above\n2. Explain clearly how the score was derived (mention which areas matched or missed)\n3. Identify what is missing or what the candidate could improve to better match the role\n\nOUTPUT RULES:\n- Return ONLY valid JSON\n- Do NOT include explanations outside JSON\n- Do NOT add extra fields\n\nReturn JSON with EXACTLY this structure:\n\n{\n  \"relevance_score\": 0,\n  \"reasoning\": \"\",\n  \"missing_or_improvements\": \"\"\n}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        928,
+        944
+      ],
+      "id": "efdec7a8-32c3-408d-b049-40fab6348cc9",
+      "name": "Evaluate",
+      "credentials": {
+        "openAiApi": {
+          "id": "WMLrzpUVDa19sqQu",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1dfcceef-3ecc-4d01-bb4e-68c493a5d9ca",
+              "name": "existing_hashes",
+              "value": "={{   $items(\"Get_Hashes\")     .map(i => i.json[\"Resume-Hash\"])     .filter(h => typeof h === \"string\" && h.length > 0) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -128,
+        272
+      ],
+      "id": "ebbda374-c7a1-4e4c-82bb-0ba0e687b24a",
+      "name": "SET existing Hash"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f8270771-18d0-4d6d-87bc-2257fde449a1",
+              "leftValue": "={{ $json.existing_emails }}",
+              "rightValue": "={{ $json['Candidate email'] }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        144,
+        512
+      ],
+      "id": "26567a69-ca17-4aa3-85d0-63e1faf7f48c",
+      "name": "Email already exists?"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/19qQsGGRZS4BtTpiz2dPKREtdOsj82g3jyFVz-KTTLkg/edit?pli=1&gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19qQsGGRZS4BtTpiz2dPKREtdOsj82g3jyFVz-KTTLkg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Resume-Hash": "={{ $('Convert to hash').item.json.resume_hash }}",
+            "Created at": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Resume-Hash",
+              "displayName": "Resume-Hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created at",
+              "displayName": "Created at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        992,
+        288
+      ],
+      "id": "c441b49c-356e-451f-80a2-a9754d6eea9c",
+      "name": "Add Hash of resume",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ln4PP3EOm2LKTq74",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17j9tuXUNrIlMzIfLNfmHSG6Wm48l5Wv9ECw2whoGxYs",
+          "mode": "list",
+          "cachedResultName": "Resume Analysis",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17j9tuXUNrIlMzIfLNfmHSG6Wm48l5Wv9ECw2whoGxYs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17j9tuXUNrIlMzIfLNfmHSG6Wm48l5Wv9ECw2whoGxYs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Relevance score": "={{ $json.relevance_score }}",
+            "                                      Reasoning": "={{ $json.reasoning }}",
+            "                        Missing/Improvements": "={{ $json.missing_or_improvements }}",
+            "Candidate name": "={{ $json['Candidate name'] }}",
+            "Candidate mobile": "={{ $json['Candidate mobile'] }}",
+            "Candidate email": "={{ $json['Candidate email'] }}",
+            "Resume file reference": "={{ $json.resume_reference }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Candidate name",
+              "displayName": "Candidate name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Candidate mobile",
+              "displayName": "Candidate mobile",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Candidate email",
+              "displayName": "Candidate email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Resume file reference",
+              "displayName": "Resume file reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Relevance score",
+              "displayName": "Relevance score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "                                      Reasoning",
+              "displayName": "                                      Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "                        Missing/Improvements",
+              "displayName": "                        Missing/Improvements",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2128,
+        944
+      ],
+      "id": "c195335a-283f-4a77-992a-c003fa5cd4c1",
+      "name": "Fill in Reasoning and others - Final",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ln4PP3EOm2LKTq74",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Used GPT-4-Mini because GPT 5 mini does not allow temprature parameter",
+        "height": 128,
+        "width": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        1104
+      ],
+      "id": "ae211a8a-1a30-491d-98a4-c0cc778cc39f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Implemented Hash dedupe to ensure no same resume is processed twice by technical glitch or intention",
+        "height": 144,
+        "width": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        -224
+      ],
+      "id": "80620913-87f3-4895-8266-91a56cebc93f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Implemented E-mail dedupe to ensure no person can upload a different resume with the same email.",
+        "height": 112,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        256
+      ],
+      "id": "2f5b5b66-5c63-4f6f-b245-60021740c1cb",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "Converted all text into JSON for better accuracy and readability by the AI",
+        "height": 112,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        736
+      ],
+      "id": "b4970d7e-1271-4bb8-88eb-7342c34c80a8",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "- You are an ATS resume parsing system.\n- You must extract structured data accurately.\n- Do not guess missing information.\n"
+            },
+            {
+              "content": "=Convert the following resume into structured JSON.\n\nRules:\n- Return ONLY valid JSON\n- Do NOT include explanations or extra text\n- If a field is missing, return \"Not Found\"\n- Do NOT guess or infer information\n- Extract only information explicitly present in the resume\n- Create a separate \"links\" section that includes ALL links mentioned in the resume, along with their headings\n- If the links are not mentioned, DO NOT add them or their placeholders\n\nResume:\n{{ $('Merge').item.json.resume_text }}\n\nReturn JSON with EXACTLY these fields:\n- name\n- email\n- phone\n- skills\n- experience\n- education\n- total_years_experience\n- links\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "metadata": "{}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1584,
+        288
+      ],
+      "id": "a8b1bc5e-abdb-4c10-b285-b6a635d122f3",
+      "name": "Break resume text to specific fields",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "WMLrzpUVDa19sqQu",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Used MERGE node, since, during initial run (when 1st pdf is analysed) The Get_Hashes and Get Email nodes return nothing. Hence this could break the workflow"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2192,
+        48
+      ],
+      "id": "cd827738-9ed9-4df2-9afd-577a566fc5dd",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "Used SET node to fix attributes that could have been lost while travelling the workflow",
+        "height": 96,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -976,
+        544
+      ],
+      "id": "d75bec1e-2cc4-43c2-9995-1dff0e2e6aac",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "The system already chooses the latest Job description uploaded. Hence not hard-coded and scalable",
+        "height": 112,
+        "width": 176
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        736
+      ],
+      "id": "a923199a-8bfc-4ca9-bdae-e05a2f31ceb8",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You are an information extraction system.\n\nConvert the following Job Description into structured JSON.\n\nRules:\n- Return ONLY valid JSON\n- Do NOT include explanations or extra text\n- Do NOT infer or assume information\n- Extract only what is explicitly mentioned\n- If a field is missing, return \"Not Found\"\n- Do NOT add new skills or requirements on your own\n\nJob Description:\n{{ $json.text }}\n\nReturn JSON with EXACTLY these fields:\n\n{\n  \"role_summary\": \"\",\n  \"required_skills\": [],\n  \"preferred_skills\": [],\n  \"minimum_experience\": \"\",\n  \"nice_to_have\": []\n}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -592,
+        736
+      ],
+      "id": "5fe84ab4-c5cb-42a6-832e-4380fb50e4fd",
+      "name": "Convert JD text into structured",
+      "credentials": {
+        "openAiApi": {
+          "id": "WMLrzpUVDa19sqQu",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0b0e0c12-6c1c-4c3f-acf1-ecb33f91a811",
+              "name": "parsed_JD_text",
+              "value": "={{ $json }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        944,
+        736
+      ],
+      "id": "6df263fd-d111-423a-bb86-3660de186034",
+      "name": "SET Parsed JD text"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfb56abf-13eb-412e-82c4-6661c70abd71",
+              "name": "Resume_parsed",
+              "value": "={{ $json }}",
+              "type": "string"
+            },
+            {
+              "id": "b1d57126-af23-4e75-b733-fcdadd43a4cf",
+              "name": "name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "9b51477d-2cd2-4b4b-bbc4-685eaee611b1",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "a4640f82-81af-46b6-a1f0-8b7bafaa05cd",
+              "name": "phone",
+              "value": "={{ $json.phone }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2464,
+        288
+      ],
+      "id": "809233b2-eed7-4a0e-a63d-8cfbb2fc59fc",
+      "name": "SET Parsed_resume"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -960,
+        944
+      ],
+      "id": "bf0fa0dc-892b-4387-9374-b507f90a9361",
+      "name": "To merge Parsed resume and JD"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "Job Description",
+        "limit": 20,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "12Rdd337tp_2cuIWTWLQFgz94L16b6Mo1",
+            "mode": "list",
+            "cachedResultName": "Job Description",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/12Rdd337tp_2cuIWTWLQFgz94L16b6Mo1"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1328,
+        528
+      ],
+      "id": "b0b392e2-88a1-4adf-a271-afbb630b4bfa",
+      "name": "Searches for all JDs",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xze0uD7VhKf5aDs0",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6b741da1-2c87-4048-a46d-da727e7ed5bc",
+              "name": "resume",
+              "value": "=https://drive.google.com/file/d/{{ $json.id }}/view",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        -144
+      ],
+      "id": "a504ccec-7fca-4114-9985-71dd96e20e06",
+      "name": "Save_resume_reference"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "710a3c6a-a595-4196-af1c-be58fa7cdf3c",
+              "name": "reasoning",
+              "value": "={{ $json.reasoning }}",
+              "type": "string"
+            },
+            {
+              "id": "fb67fd98-1e41-4057-9fe3-8f4e72647bb2",
+              "name": "missing_or_improvements",
+              "value": "={{ $json.missing_or_improvements }}",
+              "type": "string"
+            },
+            {
+              "id": "86d57e3d-faff-4f1d-a8f6-cf308eec8445",
+              "name": "relevance_score",
+              "value": "={{ $json.relevance_score }}",
+              "type": "number"
+            },
+            {
+              "id": "dcb4e968-fd79-45e0-abb4-ef4319583dcc",
+              "name": "Candidate name",
+              "value": "= {{ $items(\"SET Candidate details\")[0].json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "d1697110-b2ef-439b-97af-0bfce3611795",
+              "name": "Candidate mobile",
+              "value": "= {{ $items(\"SET Candidate details\")[0].json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "7b45ca9e-075d-4cb6-bfe9-a25b8c14352f",
+              "name": "Candidate email",
+              "value": "= {{ $items(\"SET Candidate details\")[0].json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "e0adcbef-c1e9-45ea-bbbb-87990865ef1e",
+              "name": "resume_reference",
+              "value": "={{ $items(\"Save_resume_reference\")[0].json.resume }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1872,
+        944
+      ],
+      "id": "11345e8b-6407-495b-812b-5ec483af8b9c",
+      "name": "SET evaluation params"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "25ff393d-a107-47c8-98d1-2f9406c4302e",
+              "name": "existing_emails",
+              "value": "={{ \n  $items(\"Get Email\")\n    .map(i => $json['Candidate email'])\n    .filter(e => typeof e === \"string\" && e.length > 0)\n}}",
+              "type": "string"
+            },
+            {
+              "id": "40122fce-1405-462d-a366-ba764dc63d66",
+              "name": "Candidate email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "6c808592-afa7-43fc-8bfb-5bc3a566acc6",
+              "name": "Candidate name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "b545e15b-2cef-4b92-9938-500f08bbf2b9",
+              "name": "Candidate mobile",
+              "value": "={{ $json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "abbdb430-2c72-4380-b56b-90d3c75a5080",
+              "name": "Resume file reference",
+              "value": "={{ $items(\"Save_resume_reference\")[0].json.resume }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -672,
+        512
+      ],
+      "id": "3232092e-6936-434e-8cae-972d74ead051",
+      "name": "SET Candidate details"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Save_resume_reference",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is pdf?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Convert to hash",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to hash": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get_Hashes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "SET existing Hash",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is pdf?": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Hashes": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Existing hash?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Add Hash of resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Email": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "SET Candidate details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse resume text": {
+      "main": [
+        [
+          {
+            "node": "SET Parsed_resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find latest JD": {
+      "main": [
+        [
+          {
+            "node": "Downlaod JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Downlaod JD": {
+      "main": [
+        [
+          {
+            "node": "Extract JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract JD": {
+      "main": [
+        [
+          {
+            "node": "Convert JD text into structured",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse evaluated result": {
+      "main": [
+        [
+          {
+            "node": "SET evaluation params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate": {
+      "main": [
+        [
+          {
+            "node": "Parse evaluated result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET existing Hash": {
+      "main": [
+        [
+          {
+            "node": "Existing hash?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email already exists?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Searches for all JDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Hash of resume": {
+      "main": [
+        [
+          {
+            "node": "Break resume text to specific fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Break resume text to specific fields": {
+      "main": [
+        [
+          {
+            "node": "Parse resume text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert JD text into structured": {
+      "main": [
+        [
+          {
+            "node": "SET Parsed JD text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET Parsed JD text": {
+      "main": [
+        [
+          {
+            "node": "To merge Parsed resume and JD",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "SET Parsed_resume": {
+      "main": [
+        [
+          {
+            "node": "Get Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "To merge Parsed resume and JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To merge Parsed resume and JD": {
+      "main": [
+        [
+          {
+            "node": "Evaluate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Searches for all JDs": {
+      "main": [
+        [
+          {
+            "node": "Find latest JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save_resume_reference": {
+      "main": [
+        []
+      ]
+    },
+    "SET evaluation params": {
+      "main": [
+        [
+          {
+            "node": "Fill in Reasoning and others - Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET Candidate details": {
+      "main": [
+        [
+          {
+            "node": "Email already exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "042064b4-ceac-4e02-8b4c-616f5b9f260c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b6fe7581cb3606826004e295d1c07f6398ea0857a74122d580ea5ce6e9272a18"
+  },
+  "id": "RC7OiNad31MPI0Hg",
+  "tags": []
+}
