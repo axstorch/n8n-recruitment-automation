@@ -84,6 +84,9 @@ This project solves both **hiring inefficiency** and **automation fragility**.
 - Candidate personal details and AI evaluation results are **assembled in a final node**, ensuring no data loss.
 
 ---
+## 6. **Proof of work**
+- The n8n automation working video: https://drive.google.com/file/d/1AIwRJkfK0R3oVKl3sn7AqRkOJYOmo1ox/view
+  <img width="1730" height="684" alt="Screenshot 2026-01-03 181552" src="https://github.com/user-attachments/assets/1a56946f-1aef-4d2b-b561-fd371ebbd788" />
 
 ##  What I Learned
 
@@ -164,3 +167,6 @@ This project demonstrates:
 - Strong debugging and architectural thinking
 
 Built with **production constraints**, not just happy paths (lol)
+
+
+
