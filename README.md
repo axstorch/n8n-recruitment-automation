@@ -88,6 +88,17 @@ This project solves both **hiring inefficiency** and **automation fragility**.
 - The n8n automation working video: https://drive.google.com/file/d/1AIwRJkfK0R3oVKl3sn7AqRkOJYOmo1ox/view
   <img width="1730" height="684" alt="Screenshot 2026-01-03 181552" src="https://github.com/user-attachments/assets/1a56946f-1aef-4d2b-b561-fd371ebbd788" />
 
+ **Project Data:**
+
+The folder contains: 
+
+**Resumes**: every resume submitted for screening
+**Job description**: the latest JD that candidates are scored against
+**Resume hashes**: file hashes used to catch duplicate submissions
+**Scoring sheet**: each candidate’s score against the JD, with strengths and gaps
+
+Folder Link: https://drive.google.com/drive/folders/1wVHFRjiJY3DizPW0RR_YbAkIuP7A_R8L?usp=sharing
+
 ##  What I Learned
 
 ### 1. n8n Is Not a Linear Data Pipeline
