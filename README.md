@@ -88,6 +88,11 @@ This project solves both **hiring inefficiency** and **automation fragility**.
 - The n8n automation working video: https://drive.google.com/file/d/1AIwRJkfK0R3oVKl3sn7AqRkOJYOmo1ox/view
   <img width="1730" height="684" alt="Screenshot 2026-01-03 181552" src="https://github.com/user-attachments/assets/1a56946f-1aef-4d2b-b561-fd371ebbd788" />
 
+  <img width="1440" height="662" alt="Screenshot 2026-11-27 at 2 08 32 PM" src="https://github.com/user-attachments/assets/3279c0d3-7a37-41ba-8aa7-b6dfdb3d8453" />
+
+  <img width="1440" height="633" alt="Screenshot 2026-11-27 at 2 08 10 PM" src="https://github.com/user-attachments/assets/ddad07cf-e29f-40f2-bebf-469c32294e87" />
+
+
  **Project Data:**
 
 The folder contains: 
